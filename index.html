@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Quality Monitor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <!-- Language Selection -->
+    <div id="languageModal" class="modal">
+        <div class="modal-content">
+            <h2 data-en="Select Language" data-hi="भाषा चुनें">Select Language</h2>
+            <button onclick="setLanguage('en')" data-en="English" data-hi="अंग्रेजी">English</button>
+            <button onclick="setLanguage('hi')" data-en="Hindi" data-hi="हिंदी">Hindi</button>
+        </div>
+    </div>
+
+    <!-- Login/Registration -->
+    <div id="authContainer" class="container">
+        <div class="auth-form">
+            <h1 data-en="Water Quality Monitor" data-hi="जल गुणवत्ता मॉनिटर">Water Quality Monitor</h1>
+            
+            <div id="loginForm">
+                <h2 data-en="Login" data-hi="लॉगिन">Login</h2>
+                <input type="tel" id="loginPhone" placeholder="Contact Number" data-en-placeholder="Contact Number" data-hi-placeholder="संपर्क नंबर">
+                <input type="password" id="loginPassword" placeholder="Password" data-en-placeholder="Password" data-hi-placeholder="पासवर्ड">
+                <button onclick="login()" data-en="Login" data-hi="लॉगिन">Login</button>
+                <p><a href="#" onclick="showRegister()" data-en="New user? Register here" data-hi="नए उपयोगकर्ता? यहाँ पंजीकरण करें">New user? Register here</a></p>
+            </div>
+
+            <div id="registerForm" style="display:none;">
+                <h2 data-en="Register" data-hi="पंजीकरण">Register</h2>
+                <input type="text" id="fullName" placeholder="Full Name" data-en-placeholder="Full Name" data-hi-placeholder="पूरा नाम">
+                <input type="number" id="age" placeholder="Age" data-en-placeholder="Age" data-hi-placeholder="उम्र">
+                <select id="gender">
+                    <option value="" data-en="Select Gender" data-hi="लिंग चुनें">Select Gender</option>
+                    <option value="male" data-en="Male" data-hi="पुरुष">Male</option>
+                    <option value="female" data-en="Female" data-hi="महिला">Female</option>
+                    <option value="other" data-en="Other" data-hi="अन्य">Other</option>
+                </select>
+                <input type="tel" id="contactNumber" placeholder="Contact Number" data-en-placeholder="Contact Number" data-hi-placeholder="संपर्क नंबर">
+                <input type="text" id="villageName" placeholder="Village Name" data-en-placeholder="Village Name" data-hi-placeholder="गांव का नाम">
+                <input type="password" id="password" placeholder="Password" data-en-placeholder="Password" data-hi-placeholder="पासवर्ड">
+                <button onclick="register()" data-en="Register" data-hi="पंजीकरण करें">Register</button>
+                <p><a href="#" onclick="showLogin()" data-en="Already have account? Login" data-hi="पहले से खाता है? लॉगिन करें">Already have account? Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="container" style="display:none;">
+        <nav class="navbar">
+            <h1 data-en="Water Quality Monitor" data-hi="जल गुणवत्ता मॉनिटर">Water Quality Monitor</h1>
+            <div class="nav-buttons">
+                <button onclick="showSection('overview')" data-en="Dashboard" data-hi="डैशबोर्ड">Dashboard</button>
+                <button onclick="showSection('sources')" data-en="Water Sources" data-hi="जल स्रोत">Water Sources</button>
+                <button onclick="showSection('upload')" data-en="Upload Test" data-hi="टेस्ट अपलोड">Upload Test</button>
+                <button onclick="showSection('survey')" data-en="Survey" data-hi="सर्वेक्षण">Survey</button>
+                <button onclick="showSection('education')" data-en="Education" data-hi="शिक्षा">Education</button>
+                <button onclick="logout()" data-en="Logout" data-hi="लॉगआउट">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Overview Section -->
+        <div id="overview" class="section">
+            <div class="location-info">
+                <h2 data-en="Your Location" data-hi="आपका स्थान">Your Location</h2>
+                <p id="locationText" data-en="Getting location..." data-hi="स्थान प्राप्त कर रहे हैं...">Getting location...</p>
+                <button onclick="getLocation()" data-en="Update Location" data-hi="स्थान अपडेट करें">Update Location</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 data-en="Water Sources" data-hi="जल स्रोत">Water Sources</h3>
+                    <p class="stat-number">12</p>
+                </div>
+                <div class="stat-card safe">
+                    <h3 data-en="Safe Sources" data-hi="सुरक्षित स्रोत">Safe Sources</h3>
+                    <p class="stat-number">8</p>
+                </div>
+                <div class="stat-card warning">
+                    <h3 data-en="Needs Attention" data-hi="ध्यान चाहिए">Needs Attention</h3>
+                    <p class="stat-number">3</p>
+                </div>
+                <div class="stat-card danger">
+                    <h3 data-en="Contaminated" data-hi="दूषित">Contaminated</h3>
+                    <p class="stat-number">1</p>
+                </div>
+            </div>
+
+            <div id="map" style="height: 400px; margin: 20px 0;"></div>
+
+            <div class="notifications">
+                <h3 data-en="Recent Alerts" data-hi="हाल की अलर्ट">Recent Alerts</h3>
+                <div id="alertsList">
+                    <div class="alert danger">
+                        <span data-en="High contamination detected at Village Well #3" data-hi="गांव के कुएं #3 में उच्च संदूषण का पता चला">High contamination detected at Village Well #3</span>
+                        <small>2 hours ago</small>
+                    </div>
+                    <div class="alert warning">
+                        <span data-en="pH levels slightly elevated at Borehole #1" data-hi="बोरहोल #1 में pH का स्तर थोड़ा बढ़ा हुआ">pH levels slightly elevated at Borehole #1</span>
+                        <small>1 day ago</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Water Sources Section -->
+        <div id="sources" class="section" style="display:none;">
+            <h2 data-en="Water Sources" data-hi="जल स्रोत">Water Sources</h2>
+            <div class="view-toggle">
+                <button onclick="showSourcesList()" data-en="List View" data-hi="सूची दृश्य">List View</button>
+                <button onclick="showSourcesMap()" data-en="Map View" data-hi="मानचित्र दृश्य">Map View</button>
+            </div>
+
+            <div id="sourcesList">
+                <div class="source-card">
+                    <h3 data-en="Village Well #1" data-hi="गांव का कुआं #1">Village Well #1</h3>
+                    <p><strong data-en="Type:" data-hi="प्रकार:">Type:</strong> <span data-en="Hand Pump Well" data-hi="हैंड पंप कुआं">Hand Pump Well</span></p>
+                    <p><strong data-en="Status:" data-hi="स्थिति:">Status:</strong> <span class="status safe" data-en="Safe" data-hi="सुरक्षित">Safe</span></p>
+                    <p><strong data-en="Last Tested:" data-hi="अंतिम परीक्षण:">Last Tested:</strong> 2024-01-15</p>
+                    <div class="quality-params">
+                        <span>pH: 7.2</span>
+                        <span>Chlorine: 0.5mg/L</span>
+                        <span>Turbidity: 2 NTU</span>
+                    </div>
+                    <button onclick="showSourceDetails(1)" data-en="View Details" data-hi="विवरण देखें">View Details</button>
+                </div>
+
+                <div class="source-card">
+                    <h3 data-en="River Point #1" data-hi="नदी बिंदु #1">River Point #1</h3>
+                    <p><strong data-en="Type:" data-hi="प्रकार:">Type:</strong> <span data-en="River Water" data-hi="नदी का पानी">River Water</span></p>
+                    <p><strong data-en="Status:" data-hi="स्थिति:">Status:</strong> <span class="status warning" data-en="Needs Treatment" data-hi="उपचार की आवश्यकता">Needs Treatment</span></p>
+                    <p><strong data-en="Last Tested:" data-hi="अंतिम परीक्षण:">Last Tested:</strong> 2024-01-14</p>
+                    <div class="quality-params">
+                        <span>pH: 8.1</span>
+                        <span>Chlorine: 0.1mg/L</span>
+                        <span>Turbidity: 8 NTU</span>
+                    </div>
+                    <button onclick="showSourceDetails(2)" data-en="View Details" data-hi="विवरण देखें">View Details</button>
+                </div>
+
+                <div class="source-card">
+                    <h3 data-en="Village Well #3" data-hi="गांव का कुआं #3">Village Well #3</h3>
+                    <p><strong data-en="Type:" data-hi="प्रकार:">Type:</strong> <span data-en="Open Well" data-hi="खुला कुआं">Open Well</span></p>
+                    <p><strong data-en="Status:" data-hi="स्थिति:">Status:</strong> <span class="status danger" data-en="Contaminated" data-hi="दूषित">Contaminated</span></p>
+                    <p><strong data-en="Last Tested:" data-hi="अंतिम परीक्षण:">Last Tested:</strong> 2024-01-16</p>
+                    <div class="quality-params">
+                        <span>pH: 9.2</span>
+                        <span>Chlorine: 0mg/L</span>
+                        <span>Turbidity: 15 NTU</span>
+                    </div>
+                    <button onclick="showSourceDetails(3)" data-en="View Details" data-hi="विवरण देखें">View Details</button>
+                </div>
+            </div>
+
+            <div id="sourcesMap" style="display:none;">
+                <div id="sourcesMapContainer" style="height: 500px;"></div>
+            </div>
+        </div>
+
+        <!-- Upload Section -->
+        <div id="upload" class="section" style="display:none;">
+            <h2 data-en="Upload Water Test Results" data-hi="जल परीक्षण परिणाम अपलोड करें">Upload Water Test Results</h2>
+            <form id="uploadForm">
+                <select id="uploadSource" required>
+                    <option value="" data-en="Select Water Source" data-hi="जल स्रोत चुनें">Select Water Source</option>
+                    <option value="well1" data-en="Village Well #1" data-hi="गांव का कुआं #1">Village Well #1</option>
+                    <option value="river1" data-en="River Point #1" data-hi="नदी बिंदु #1">River Point #1</option>
+                    <option value="well3" data-en="Village Well #3" data-hi="गांव का कुआं #3">Village Well #3</option>
+                </select>
+
+                <input type="number" id="phLevel" placeholder="pH Level" data-en-placeholder="pH Level" data-hi-placeholder="pH स्तर" step="0.1" min="0" max="14">
+                <input type="number" id="chlorineLevel" placeholder="Chlorine (mg/L)" data-en-placeholder="Chlorine (mg/L)" data-hi-placeholder="क्लोरीन (mg/L)" step="0.1" min="0">
+                <input type="number" id="turbidityLevel" placeholder="Turbidity (NTU)" data-en-placeholder="Turbidity (NTU)" data-hi-placeholder="टर्बिडिटी (NTU)" step="0.1" min="0">
+
+                <label for="testPhoto" data-en="Upload Test Photo:" data-hi="परीक्षण फोटो अपलोड करें:">Upload Test Photo:</label>
+                <input type="file" id="testPhoto" accept="image/*" capture="camera">
+
+                <textarea id="testComments" placeholder="Additional Comments" data-en-placeholder="Additional Comments" data-hi-placeholder="अतिरिक्त टिप्पणियां"></textarea>
+
+                <button type="submit" data-en="Upload Results" data-hi="परिणाम अपलोड करें">Upload Results</button>
+            </form>
+
+            <div id="uploadHistory">
+                <h3 data-en="Recent Uploads" data-hi="हाल के अपलोड">Recent Uploads</h3>
+                <div class="upload-item">
+                    <p><strong data-en="Village Well #1" data-hi="गांव का कुआं #1">Village Well #1</strong> - 2024-01-15</p>
+                    <p>pH: 7.2, Chlorine: 0.5mg/L, Turbidity: 2 NTU</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Survey Section -->
+        <div id="survey" class="section" style="display:none;">
+            <h2 data-en="Sanitary Survey" data-hi="स्वच्छता सर्वेक्षण">Sanitary Survey</h2>
+            <form id="surveyForm">
+                <select id="surveySource" required>
+                    <option value="" data-en="Select Water Source" data-hi="जल स्रोत चुनें">Select Water Source</option>
+                    <option value="well1" data-en="Village Well #1" data-hi="गांव का कुआं #1">Village Well #1</option>
+                    <option value="river1" data-en="River Point #1" data-hi="नदी बिंदु #1">River Point #1</option>
+                    <option value="well3" data-en="Village Well #3" data-hi="गांव का कुआं #3">Village Well #3</option>
+                </select>
+
+                <div class="survey-checklist">
+                    <h3 data-en="Safety Checklist" data-hi="सुरक्षा चेकलिस्ट">Safety Checklist</h3>
+                    
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="survey" value="clean_surroundings">
+                        <span data-en="Clean surroundings (no garbage/waste)" data-hi="साफ परिवेश (कोई कचरा/अपशिष्ट नहीं)">Clean surroundings (no garbage/waste)</span>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="survey" value="proper_drainage">
+                        <span data-en="Proper drainage system" data-hi="उचित जल निकासी व्यवस्था">Proper drainage system</span>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="survey" value="no_animals">
+                        <span data-en="No animals near water source" data-hi="जल स्रोत के पास कोई जानवर नहीं">No animals near water source</span>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="survey" value="covered_well">
+                        <span data-en="Well/source is properly covered" data-hi="कुआं/स्रोत ठीक से ढका हुआ है">Well/source is properly covered</span>
+                    </label>
+
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="survey" value="clean_containers">
+                        <span data-en="Clean water collection containers" data-hi="साफ पानी संग्रह कंटेनर">Clean water collection containers</span>
+                    </label>
+                </div>
+
+                <div class="risk-assessment">
+                    <h3 data-en="Risk Level" data-hi="जोखिम स्तर">Risk Level</h3>
+                    <select id="riskLevel" required>
+                        <option value="" data-en="Select Risk Level" data-hi="जोखिम स्तर चुनें">Select Risk Level</option>
+                        <option value="low" data-en="Low Risk" data-hi="कम जोखिम">Low Risk</option>
+                        <option value="medium" data-en="Medium Risk" data-hi="मध्यम जोखिम">Medium Risk</option>
+                        <option value="high" data-en="High Risk" data-hi="उच्च जोखिम">High Risk</option>
+                    </select>
+                </div>
+
+                <textarea id="surveyNotes" placeholder="Additional observations" data-en-placeholder="Additional observations" data-hi-placeholder="अतिरिक्त टिप्पणियां"></textarea>
+
+                <button type="submit" data-en="Submit Survey" data-hi="सर्वेक्षण जमा करें">Submit Survey</button>
+            </form>
+        </div>
+
+        <!-- Education Section -->
+        <div id="education" class="section" style="display:none;">
+            <h2 data-en="Educational Resources" data-hi="शैक्षिक संसाधन">Educational Resources</h2>
+            
+            <div class="education-modules">
+                <div class="module-card">
+                    <h3 data-en="Waterborne Diseases" data-hi="जल जनित रोग">Waterborne Diseases</h3>
+                    <p data-en="Learn about common diseases caused by contaminated water" data-hi="दूषित पानी से होने वाली सामान्य बीमारियों के बारे में जानें">Learn about common diseases caused by contaminated water</p>
+                    <button onclick="showModule('diseases')" data-en="Start Learning" data-hi="सीखना शुरू करें">Start Learning</button>
+                </div>
+
+                <div class="module-card">
+                    <h3 data-en="Water Treatment Methods" data-hi="जल उपचार विधियां">Water Treatment Methods</h3>
+                    <p data-en="Simple methods to purify water at home" data-hi="घर पर पानी को शुद्ध करने के सरल तरीके">Simple methods to purify water at home</p>
+                    <button onclick="showModule('treatment')" data-en="Start Learning" data-hi="सीखना शुरू करें">Start Learning</button>
+                </div>
+
+                <div class="module-card">
+                    <h3 data-en="Hygiene Practices" data-hi="स्वच्छता प्रथाएं">Hygiene Practices</h3>
+                    <p data-en="Best practices for maintaining water and personal hygiene" data-hi="पानी और व्यक्तिगत स्वच्छता बनाए रखने की सर्वोत्तम प्रथाएं">Best practices for maintaining water and personal hygiene</p>
+                    <button onclick="showModule('hygiene')" data-en="Start Learning" data-hi="सीखना शुरू करें">Start Learning</button>
+                </div>
+
+                <div class="module-card">
+                    <h3 data-en="Prevention Tips" data-hi="रोकथाम के उपाय">Prevention Tips</h3>
+                    <p data-en="How to prevent water contamination in your community" data-hi="अपने समुदाय में जल संदूषण को कैसे रोकें">How to prevent water contamination in your community</p>
+                    <button onclick="showModule('prevention')" data-en="Start Learning" data-hi="सीखना शुरू करें">Start Learning</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Offline Indicator -->
+    <div id="offlineIndicator" class="offline-indicator" style="display:none;">
+        <span data-en="Offline Mode - Data will sync when connected" data-hi="ऑफलाइन मोड - कनेक्ट होने पर डेटा सिंक होगा">Offline Mode - Data will sync when connected</span>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
